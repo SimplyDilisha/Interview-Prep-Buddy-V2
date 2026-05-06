@@ -7,7 +7,9 @@ import AnswerComparison from '@/components/AnswerComparison';
 import CareerReadiness from '@/components/CareerReadiness';
 import VoiceRecorder from '@/components/VoiceRecorder';
 import FloatingOrb from '@/components/FloatingOrb';
-import { evaluateAnswer, isGroqConfigured, transcribeAudio, generateInterviewQuestions, GeneratedQuestion } from '@/lib/groqService';
+import CameraFeed from '@/components/CameraFeed';
+import InterviewMirror from '@/components/InterviewMirror';
+import { evaluateAnswer, isGroqConfigured, transcribeAudio, generateInterviewQuestions, GeneratedQuestion, PerceptionData } from '@/lib/groqService';
 import { ArrowLeft, ArrowRight, Send, Mic, Keyboard, MessageSquare, Loader2 } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 
@@ -25,6 +27,7 @@ const Interview: React.FC = () => {
     feedback: string;
     strongAnswer: string;
     missingElements: string[];
+    perception: PerceptionData;
   } | null>(null);
   const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set());
 
@@ -347,13 +350,17 @@ const Interview: React.FC = () => {
             </div>
           </div>
 
-          {/* Sidebar - Career Readiness */}
+          {/* Sidebar - Career Readiness + Camera */}
           <div className="lg:col-span-1">
-            <div className="sticky top-8">
+            <div className="sticky top-8 space-y-6">
+              <CameraFeed />
               <CareerReadiness
                 questionsAnswered={answeredQuestions.size}
                 totalQuestions={totalQuestions}
               />
+              {feedback && (
+                <InterviewMirror perception={feedback.perception} />
+              )}
             </div>
           </div>
         </div>
