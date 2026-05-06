@@ -8,10 +8,19 @@ export interface GeneratedQuestion {
   difficulty: 'easy' | 'medium' | 'hard';
 }
 
+export interface PerceptionData {
+  confidence: number;
+  clarity: number;
+  depth: number;
+  relevance: number;
+  feedback: string;
+}
+
 export interface EvaluationResult {
   feedback: string;
   strongAnswer: string;
   missingElements: string[];
+  perception: PerceptionData;
 }
 
 export const getGroqApiKey = (): string | null => {
@@ -146,7 +155,14 @@ You MUST respond with ONLY valid JSON (no markdown, no code blocks):
 {
   "feedback": "<string: 2-3 sentence feedback on how an interviewer would perceive this answer and what could be improved>",
   "strongAnswer": "<string: what a strong candidate answer would look like for this question>",
-  "missingElements": ["<string>", "<string>", ...] (max 4 key elements that were missing from the answer)
+  "missingElements": ["<string>", "<string>", ...] (max 4 key elements that were missing from the answer),
+  "perception": {
+    "confidence": <integer 0-100: how confident the candidate sounds>,
+    "clarity": <integer 0-100: how clearly the answer is communicated>,
+    "depth": <integer 0-100: how much technical depth the answer shows>,
+    "relevance": <integer 0-100: how relevant the answer is to the question>,
+    "feedback": "<string: one sentence describing how an interviewer would perceive this candidate>"
+  }
 }`;
 
   const userPrompt = `Question Category: ${category}
@@ -188,12 +204,21 @@ Evaluate this response and provide detailed feedback.`;
   try {
     const parsed = JSON.parse(content);
     
+    const perception = parsed.perception || {};
+    
     return {
       feedback: String(parsed.feedback || 'Unable to generate feedback.'),
       strongAnswer: String(parsed.strongAnswer || 'A strong answer would include specific examples.'),
       missingElements: Array.isArray(parsed.missingElements) 
         ? parsed.missingElements.slice(0, 4).map(String)
         : ['Specific examples', 'Technical depth'],
+      perception: {
+        confidence: Number(perception.confidence) || 50,
+        clarity: Number(perception.clarity) || 50,
+        depth: Number(perception.depth) || 50,
+        relevance: Number(perception.relevance) || 50,
+        feedback: String(perception.feedback || 'The candidate provided a reasonable response.'),
+      },
     };
   } catch (parseError) {
     console.error('Failed to parse Groq response:', content);
